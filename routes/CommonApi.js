@@ -44,6 +44,7 @@ const ValidateHeaders = async (ctx, next) => {
 }
 
 const targetBase_USER_URL = process.env.TARGET_SERVICE_PERSON_URL;
+const targetBase_COLLEGE_URL = process.env.TARGET_SERVICE_COLLEGE_URL;
 
 
 const CommonApi = new Router({ prefix: '/api' })
@@ -111,7 +112,7 @@ CommonApi
 
       const queryString = (new URLSearchParams(queryParams)).toString();
 
-      const targetUrl = `${targetBase_USER_URL}${fullPath}${queryString ? `?${queryString}` : ''}`
+      const targetUrl = `${targetBase_COLLEGE_URL}${fullPath}${queryString ? `?${queryString}` : ''}`
 
       console.log(targetUrl);
 
