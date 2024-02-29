@@ -37,8 +37,8 @@ const ValidateHeaders = async (ctx, next) => {
    if (!tokenData?.person_id)
       return Response(ctx, 401, "Wrong token")
 
-   ctx.tpid = tokenData?.person_id // token person ID
-   ctx.tsession = tokenData?.session // token session
+   ctx.tpid = tokenData?.person_id
+   ctx.tsession = tokenData?.session
 
    await next()
 }
@@ -99,34 +99,17 @@ CommonApi
       console.log(await getAllQueryParams(ctx));
       return Response(ctx, 200, await getAllQueryParams(ctx))
    })
-   .all('/person/:version/:servicePath*', ValidateHeaders, async (ctx) => {
+   .all('/colleges/:version/:servicePath*', ValidateHeaders, async (ctx) => {
 
       const queryParams = await getAllQueryParams(ctx)
 
       if (queryParams === null)
          return Response(ctx, 400, "Wrong parameter 'tpid'")
 
-      // if (!queryParams?.person_id)
-      //    return Response(ctx, 400, "'person_id' parameter not passed")
-
-      // Получаем путь и параметры запроса
       const servicePath = ctx.params.servicePath;
       const fullPath = ctx.path
 
       const queryString = (new URLSearchParams(queryParams)).toString();
-
-
-      // const fullPath = ctx.path.replace('/api/', '');
-
-      // Определяем целевой URL из переменных окружения
-
-      // return Response(ctx, 400,
-      //    {
-      //       servicePath,
-      //       targetUrl,
-      //       fullPath,
-      //       targetBase_USER_URL
-      //    })
 
       const targetUrl = `${targetBase_USER_URL}${fullPath}${queryString ? `?${queryString}` : ''}`
 
@@ -140,7 +123,6 @@ CommonApi
       // delete headers['connection'];
 
       try {
-         // Перенаправляем запрос с использованием Axios
          const response = await axios({
             method: ctx.method,
             url: targetUrl,
@@ -150,10 +132,6 @@ CommonApi
             // headers: ctx.request.headers,
             // params: ctx.request.query,
          })
-
-         // Устанавливаем статус ответа и возвращаем данные
-         // ctx.status = await response.status;
-
          return Response(
             ctx,
             response?.status || 500,
@@ -161,28 +139,60 @@ CommonApi
          )
 
       } catch (error) {
-         // if (error.response) {
-         // Передаем статус ошибки и сообщение, если оно есть
          return Response(
             ctx,
             error.response?.status || 500,
             await error.response?.data
-            // error.response?.status || 500,
-            // {
-            //    url: targetUrl,
-            //    data: await error.response?.data,
-            // }
+         )
+      }
+   })
+   .all('/person/:version/:servicePath*', ValidateHeaders, async (ctx) => {
+
+      const queryParams = await getAllQueryParams(ctx)
+
+      if (queryParams === null)
+         return Response(ctx, 400, "Wrong parameter 'tpid'")
+
+      const servicePath = ctx.params.servicePath;
+      const fullPath = ctx.path
+
+      const queryString = (new URLSearchParams(queryParams)).toString();
+
+      const targetUrl = `${targetBase_USER_URL}${fullPath}${queryString ? `?${queryString}` : ''}`
+
+      console.log(targetUrl);
+
+      // const headers = { ...ctx.request.headers };
+
+      // // Удаляем заголовки, которые не должны быть переданы
+      // delete headers['host'];
+      // delete headers['content-length'];
+      // delete headers['connection'];
+
+      try {
+         const response = await axios({
+            method: ctx.method,
+            url: targetUrl,
+            // headers: headers,
+            // params: queryParams,
+            // data: ctx.request.body,
+            // headers: ctx.request.headers,
+            // params: ctx.request.query,
+         })
+         return Response(
+            ctx,
+            response?.status || 500,
+            await response.data,
          )
 
-         // } else {
-         //    // Ошибка соединения или истекло время ожидания
-         //    ctx.status = 500;
-         //    ctx.body = { message: 'Internal Server Error' };
-         // }
+      } catch (error) {
+         return Response(
+            ctx,
+            error.response?.status || 500,
+            await error.response?.data
+         )
       }
-
-
-   });
+   })
 
 
 async function getAllQueryParams(ctx) {
