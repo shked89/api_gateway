@@ -29,8 +29,16 @@ const ValidateHeaders = async (ctx, next) => {
    if (!token)
       return Response(ctx, 401, "There is no 'Auth' in headers")
 
-   if (!(TokenHandler.decrypt(token))?.tokentype)
+   const tokenData = TokenHandler.decrypt(token)
+
+   if (tokenData?.tokentype !== 'accesstoken')
+      return Response(ctx, 401, "Wrong token type")
+
+   if (!tokenData?.person_id)
       return Response(ctx, 401, "Wrong token")
+
+   ctx.tpid = tokenData?.person_id // token person ID
+   ctx.tsession = tokenData?.session // token session
 
    await next()
 }
@@ -46,6 +54,9 @@ CommonApi
 
       const queryParams = await getAllQueryParams(ctx)
 
+      if (queryParams === null)
+         return Response(ctx, 400, "Wrong parameter 'tpid'")
+
       if (!queryParams?.login)
          return Response(ctx, 400, "'login' parameter not passed")
 
@@ -54,13 +65,13 @@ CommonApi
 
       const accesstoken = TokenHandler.encrypt({
          // date: parseInt(Date.now() / 1000, 10),
-         person_id: 1,
+         person_id: 12,
          session: 'test_1Ui',
          tokentype: 'accesstoken',
       }, '12h')
       const refreshtoken = TokenHandler.encrypt({
          // date: parseInt(Date.now() / 1000, 10),
-         person_id: 1,
+         person_id: 12,
          session: 'test_1Ui',
          tokentype: 'refreshtoken',
       }, '15d')
@@ -75,20 +86,34 @@ CommonApi
          return Response(ctx, 400, "wrong login or password")
 
    })
+   .all('/test/v1/data', ValidateHeaders, async (ctx) => {
+
+      const queryParams = await getAllQueryParams(ctx)
+
+      if (queryParams === null)
+         return Response(ctx, 400, "Wrong parameter 'tpid'")
+
+      if (!queryParams?.tpid)
+         return Response(ctx, 400, "'person_id' parameter not passed")
+
+      console.log(await getAllQueryParams(ctx));
+      return Response(ctx, 200, await getAllQueryParams(ctx))
+   })
    .all('/person/:version/:servicePath*', ValidateHeaders, async (ctx) => {
 
       const queryParams = await getAllQueryParams(ctx)
 
-      if (!queryParams?.person_id)
-         return Response(ctx, 400, "'person_id' parameter not passed")
+      if (queryParams === null)
+         return Response(ctx, 400, "Wrong parameter 'tpid'")
+
+      // if (!queryParams?.person_id)
+      //    return Response(ctx, 400, "'person_id' parameter not passed")
 
       // Получаем путь и параметры запроса
       const servicePath = ctx.params.servicePath;
       const fullPath = ctx.path
 
-     
-     const queryString = (new URLSearchParams(queryParams)).toString();
-
+      const queryString = (new URLSearchParams(queryParams)).toString();
 
 
       // const fullPath = ctx.path.replace('/api/', '');
@@ -161,10 +186,16 @@ CommonApi
 
 
 async function getAllQueryParams(ctx) {
-   return {
+
+   const data = {
       ...ctx.request.body,
-      ...ctx.query
+      ...ctx.query,
+      // tpid: ctx.tpid,
    }
+   if (data?.tpid)
+      return null
+   data.tpid = ctx.tpid
+   return data
 }
 
 // .all('/set_user', ValidateHeaders, async (ctx, next) => {
