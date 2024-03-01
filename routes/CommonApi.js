@@ -27,17 +27,21 @@ const ValidateHeaders = async (ctx, next) => {
    //    return Response(ctx, 404, 'Wrong uuid')
 
    if (!token)
-      return Response(ctx, 401, "There is no 'Auth' in headers")
+      return Response(ctx, 401, "There is no 'Auth' in cookie or headers")
 
    const tokenData = TokenHandler.decrypt(token)
+
+   if (!tokenData)
+      return Response(ctx, 401, "Wrong token")
 
    if (tokenData?.tokentype !== 'accesstoken')
       return Response(ctx, 401, "Wrong token type")
 
-   if (!tokenData?.person_id)
-      return Response(ctx, 401, "Wrong token")
+   if (!tokenData?.person_unit_id)
+      return Response(ctx, 401, "Wrong token type")
 
-   ctx.tpid = tokenData?.person_id
+
+   ctx.tpid = tokenData?.person_unit_id
    ctx.tsession = tokenData?.session
 
    await next()
@@ -66,13 +70,13 @@ CommonApi
 
       const accesstoken = TokenHandler.encrypt({
          // date: parseInt(Date.now() / 1000, 10),
-         person_id: 12,
+         person_unit_id: 12,
          session: 'test_1Ui',
          tokentype: 'accesstoken',
       }, '12h')
       const refreshtoken = TokenHandler.encrypt({
          // date: parseInt(Date.now() / 1000, 10),
-         person_id: 12,
+         person_unit_id: 12,
          session: 'test_1Ui',
          tokentype: 'refreshtoken',
       }, '15d')
@@ -95,7 +99,7 @@ CommonApi
          return Response(ctx, 400, "Wrong parameter 'tpid'")
 
       if (!queryParams?.tpid)
-         return Response(ctx, 400, "'person_id' parameter not passed")
+         return Response(ctx, 400, "'person_unit_id' parameter not passed")
 
       console.log(await getAllQueryParams(ctx));
       return Response(ctx, 200, await getAllQueryParams(ctx))
